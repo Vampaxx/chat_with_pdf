@@ -1,51 +1,38 @@
 import os
+import streamlit as st 
 from dotenv import load_dotenv
 from langchain.llms import GooglePalm
-from langchain.llms import OpenAI
+from src.chat_with_pdf.utils.common import *
 from langchain.prompts import SemanticSimilarityExampleSelector
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import Chroma
-
-
-
-from src.chat_with_pdf.utils.common import get_pdf_file
-
-import streamlit as st 
-
 
 def main():
     st.set_page_config(page_title="Chat with multiple PDFs",page_icon="🧊")
+
     st.header("Chat with multiple PDFs :books:")
-    st.text_input("Ask a Question about the Documents")
+    user_question = st.text_input("Ask a Question about the Documents")
+    
+    if user_question:
+        respose = st.session_state.conversation({'question':user_question})
+        st.write(respose['answer'])
 
 
-
-
+    
     with st.sidebar:
         st.subheader("Your documents")
         pdf_files = st.file_uploader("Upload your PDF and Press 'Process'",accept_multiple_files=True)
 
         if st.button("Process"):
             st.spinner("Processing...")
-            pdf_text = get_pdf_file(pdf_files)
-            st.write(pdf_text)
             # get the pdf file
+            pdf_text = get_pdf_file(pdf_files)
             # get the pdf chunks
+            text_chunks = get_text_chunks(pdf_text)
             # create vector store
-
-        add_radio = st.radio(
-            "Choose file format",
-            ("PDF", "JPEG"))
-        
-        add_selectbox = st.sidebar.selectbox(
-            "How would you like to be contacted?",
-            ("Email", "Home phone", "Mobile phone"))
-        
-
-    
-
+            vector = get_vectorstore(text_chunks=text_chunks)
+            # conversation,
+            st.session_state.conversation = conversation_chain(vectorstore=vector)
+            #st.write(st.session_state.conversation)
 
 
 if __name__ == "__main__":
     main()
-
